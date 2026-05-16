@@ -27,8 +27,9 @@ class QueryExpansion(BaseModel):
 class SemanticQueryExpander:
     def __init__(self):
         # Assumes GEMINI_API_KEY is set in environment
-        # Fallback to the known key if not set to ensure demo works
-        api_key = os.getenv("GEMINI_API_KEY", "AIzaSyCK_llYWTFC9Qk3p1uKsGVXQDA93BzYL84")
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
         self.client = genai.Client(api_key=api_key)
         self.model = "gemini-1.5-flash"
         
