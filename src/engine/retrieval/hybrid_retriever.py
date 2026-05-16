@@ -38,13 +38,16 @@ class HybridRetriever:
             
         return fused_results
 
-    def search(self, query: str, top_k: int = 10, sparse_top_k: int = 30, dense_top_k: int = 30) -> List[Dict[str, Any]]:
+    def search(self, query: str, top_k: int = 10, sparse_top_k: int = 60, dense_top_k: int = 0) -> List[Dict[str, Any]]:
+        # Dense retrieval is disabled to save memory on Render.
+        # We rely on high-quality BM25 retrieval + Symbolic constraint filtering.
         sparse_results = self.sparse_retriever.search(query, top_k=sparse_top_k)
-        dense_results = self.dense_retriever.search(query, top_k=dense_top_k)
         
-        fused = self._reciprocal_rank_fusion(sparse_results, dense_results)
-        
-        return fused[:top_k]
+        # We map sparse scores to rrf_score for compatibility with the reranker
+        for res in sparse_results:
+            res['rrf_score'] = res.get('bm25_score', 0.0) / 100.0 # simple scaling
+            
+        return sparse_results[:top_k]
 
 if __name__ == "__main__":
     retriever = HybridRetriever(r"c:\Users\himan\Desktop\Projects\grail\data\processed\normalized_catalog.json")
