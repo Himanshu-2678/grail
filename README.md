@@ -14,6 +14,7 @@ Standard retrieval systems rely on keyword search or probabilistic semantic embe
 
 ## System Architecture
 
+![GRAIL Architecture](assets/grail_architecture.png)
 ```mermaid
 flowchart TD
     A[User Query / Chat History] --> B[Constraint Extraction]
