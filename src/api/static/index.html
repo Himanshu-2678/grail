@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GRAIL | Grounded Retrieval Engine</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #07111f;
+            --bg-secondary: rgba(15, 23, 42, 0.62);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.03);
+
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+
+            --accent: #7dd3fc;
+            --accent-soft: rgba(125, 211, 252, 0.12);
+
+            --success: #86efac;
+            --danger: #fca5a5;
+
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+            --blur: blur(24px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(148, 163, 184, 0.08), transparent 24%),
+                linear-gradient(135deg, #050b14 0%, #0f172a 45%, #09111d 100%);
+
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            backdrop-filter: blur(2px);
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 980px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+
+            position: relative;
+            z-index: 2;
+        }
+
+        header {
+            text-align: center;
+            padding: 2.5rem 2rem;
+
+            border-radius: 28px;
+
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+
+            backdrop-filter: var(--blur);
+            box-shadow: var(--shadow);
+
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+
+            background: linear-gradient(120deg,
+                    rgba(255, 255, 255, 0.04),
+                    transparent 40%);
+
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4.5rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+
+            color: #f8fafc;
+
+            margin-bottom: 0.7rem;
+        }
+
+        .subtitle {
+            max-width: 760px;
+            margin: 0 auto;
+
+            font-size: 1rem;
+            color: var(--text-secondary);
+
+            line-height: 1.9;
+            letter-spacing: 0.03em;
+        }
+
+        .subtitle strong {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+
+            padding: 1rem;
+
+            border-radius: 24px;
+
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+
+            backdrop-filter: var(--blur);
+            box-shadow: var(--shadow);
+
+            transition: 0.3s ease;
+        }
+
+        .search-box:focus-within {
+            border-color: rgba(125, 211, 252, 0.35);
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(125, 211, 252, 0.18);
+        }
+
+        input[type="text"] {
+            flex: 1;
+
+            border: none;
+            background: transparent;
+
+            color: var(--text-primary);
+
+            font-size: 1rem;
+            padding: 0.9rem 1rem;
+
+            outline: none;
+
+            letter-spacing: 0.02em;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(148, 163, 184, 0.58);
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+
+            border-radius: 18px;
+
+            padding: 0.95rem 1.7rem;
+
+            background: linear-gradient(135deg,
+                    rgba(125, 211, 252, 0.18),
+                    rgba(148, 163, 184, 0.08));
+
+            color: #f8fafc;
+
+            font-size: 0.9rem;
+            font-weight: 500;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+
+            border: 1px solid rgba(125, 211, 252, 0.15);
+
+            transition: all 0.28s ease;
+
+            backdrop-filter: blur(12px);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+
+            background: linear-gradient(135deg,
+                    rgba(125, 211, 252, 0.26),
+                    rgba(148, 163, 184, 0.14));
+
+            border-color: rgba(125, 211, 252, 0.35);
+        }
+
+        .results-container {
+            display: none;
+            flex-direction: column;
+            gap: 1.6rem;
+        }
+
+        .clarification-alert,
+        .success-alert,
+        .metrics-card,
+        .candidate-card {
+            background: var(--bg-secondary);
+
+            border: 1px solid var(--glass-border);
+
+            backdrop-filter: var(--blur);
+            box-shadow: var(--shadow);
+        }
+
+        .clarification-alert,
+        .success-alert {
+            padding: 1.2rem 1.4rem;
+
+            border-radius: 22px;
+
+            display: flex;
+            align-items: center;
+
+            line-height: 1.8;
+        }
+
+        .clarification-alert {
+            color: var(--danger);
+            background: rgba(127, 29, 29, 0.18);
+        }
+
+        .success-alert {
+            color: var(--success);
+            background: rgba(20, 83, 45, 0.16);
+        }
+
+        .metrics-card {
+            border-radius: 28px;
+            padding: 2rem;
+        }
+
+        .metrics-header {
+            font-family: 'Cormorant Garamond', serif;
+
+            font-size: 1.7rem;
+            color: #f8fafc;
+
+            margin-bottom: 1.4rem;
+            letter-spacing: 0.06em;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-item {
+            padding: 1.1rem;
+
+            border-radius: 20px;
+
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .metric-label {
+            display: block;
+
+            margin-bottom: 0.55rem;
+
+            color: var(--text-secondary);
+
+            font-size: 0.8rem;
+
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .metric-value {
+            font-size: 1.15rem;
+            color: var(--text-primary);
+            font-weight: 500;
+
+            line-height: 1.7;
+        }
+
+        #expandedQuery {
+            font-style: italic;
+            color: #cbd5e1;
+        }
+
+        .candidate-card {
+            border-radius: 26px;
+
+            padding: 1.8rem;
+
+            transition: all 0.28s ease;
+
+            position: relative;
+            overflow: hidden;
+        }
+
+        .candidate-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+
+            background: linear-gradient(140deg,
+                    rgba(255, 255, 255, 0.03),
+                    transparent 40%);
+
+            pointer-events: none;
+        }
+
+        .candidate-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(125, 211, 252, 0.18);
+        }
+
+        .candidate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 1.2rem;
+        }
+
+        .candidate-title {
+            font-family: 'Cormorant Garamond', serif;
+
+            font-size: 2rem;
+            color: #f8fafc;
+
+            letter-spacing: 0.04em;
+        }
+
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        .badge {
+            padding: 0.5rem 0.9rem;
+
+            border-radius: 999px;
+
+            background: var(--accent-soft);
+            border: 1px solid rgba(125, 211, 252, 0.12);
+
+            color: #bae6fd;
+
+            font-size: 0.78rem;
+
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .loader {
+            display: none;
+
+            width: 42px;
+            height: 42px;
+
+            margin: 1rem auto;
+
+            border-radius: 50%;
+
+            border: 3px solid rgba(255, 255, 255, 0.08);
+            border-top: 3px solid var(--accent);
+
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1.2rem;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .candidate-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+            <h1>GRAIL</h1>
+
+            <p class="subtitle">
+                <strong>Grounded Retrieval Agent for Intelligent Listing</strong><br>
+
+                A strict constraint-based retrieval engine for the SHL Product Catalog,
+                engineered with hybrid retrieval, deterministic grounding,
+                explicit uncertainty modeling, and taxonomy-aligned search.
+            </p>
+        </header>
+
+        <div class="search-box">
+
+            <input type="text" id="searchInput"
+                placeholder="Describe retrieval constraints, assessment taxonomy, or candidate intent..."
+                onkeypress="handleKeyPress(event)" />
+
+            <button onclick="performSearch()" id="searchBtn">
+                Resolve
+            </button>
+
+        </div>
+
+        <div class="loader" id="loader"></div>
+        <div id="loaderText" style="display: none; text-align: center; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic; font-size: 0.9rem;"></div>
+
+        <div class="results-container" id="resultsArea">
+
+            <div class="metrics-card" id="replyCard" style="display: none;">
+                <div class="metrics-header" style="font-size: 1.4rem;">
+                    Agent Reply
+                </div>
+                <div class="subtitle" id="agentReply" style="color: #e2e8f0; font-size: 1.1rem; text-align: left;">
+                </div>
+            </div>
+
+            <div id="recommendationsSection" style="display: none;">
+                <div class="metrics-header">
+                    Recommendations
+                </div>
+                <div id="candidatesList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Global message history to simulate stateless interactions
+        let conversationHistory = [];
+
+        async function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+
+            if (!query) return;
+
+            // Add to simulated history
+            conversationHistory.push({ role: "user", content: query });
+            // Do NOT remove the query from the input so the user can see it
+            // searchInput.value = '';
+
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loaderText');
+            const resultsArea = document.getElementById('resultsArea');
+            const btn = document.getElementById('searchBtn');
+
+            resultsArea.style.display = 'none';
+            loader.style.display = 'block';
+            loaderText.style.display = 'block';
+            btn.disabled = true;
+
+            const processingSteps = [
+                "Extracting Semantic Constraints...",
+                "Querying BM25 Lexical Index...",
+                "Retrieving FAISS Dense Embeddings...",
+                "Applying Reciprocal Rank Fusion...",
+                "Executing Taxonomy-Aware Veto...",
+                "BGE Cross-Encoder Reranking...",
+                "Computing Entropy Calibration...",
+                "Generating Deterministic Response..."
+            ];
+            
+            let stepIndex = 0;
+            loaderText.innerText = processingSteps[0];
+            
+            const loaderInterval = setInterval(() => {
+                stepIndex++;
+                if (stepIndex < processingSteps.length) {
+                    loaderText.innerText = processingSteps[stepIndex];
+                }
+            }, 500);
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: conversationHistory
+                    })
+                });
+
+                if (!response.ok) throw new Error('API Error');
+
+                const data = await response.json();
+
+                // Add agent reply to history
+                if (data.reply) {
+                    conversationHistory.push({ role: "assistant", content: data.reply });
+                }
+
+                renderResults(data);
+
+            } catch (error) {
+                console.error('Search failed:', error);
+                alert('Failed to retrieve data. Ensure the retrieval backend is active.');
+                // Remove the failed user message
+                conversationHistory.pop();
+            } finally {
+                clearInterval(loaderInterval);
+                loader.style.display = 'none';
+                loaderText.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function renderResults(data) {
+            const resultsArea = document.getElementById('resultsArea');
+            const replyCard = document.getElementById('replyCard');
+            const agentReply = document.getElementById('agentReply');
+            const recSection = document.getElementById('recommendationsSection');
+            const candidatesList = document.getElementById('candidatesList');
+
+            // Render Reply
+            agentReply.innerText = data.reply;
+            replyCard.style.display = 'block';
+
+            // Render Recommendations
+            if (data.recommendations && data.recommendations.length > 0) {
+                candidatesList.innerHTML = '';
+                data.recommendations.forEach((candidate, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'candidate-card';
+                    card.innerHTML = `
+                        <div class="candidate-header" style="margin-bottom: 0;">
+                            <div class="candidate-title" style="font-size: 1.5rem;">
+                                ${index + 1}. <a href="${candidate.url}" target="_blank" style="color: #f8fafc; text-decoration: none;">${candidate.name}</a>
+                            </div>
+                        </div>
+                        <div class="badges" style="margin-top: 0.8rem;">
+                            <span class="badge">Type: ${candidate.test_type}</span>
+                        </div>
+                    `;
+                    candidatesList.appendChild(card);
+                });
+                recSection.style.display = 'block';
+            } else {
+                recSection.style.display = 'none';
+            }
+
+            if (data.end_of_conversation) {
+                // Could display a termination banner
+                console.log("Conversation Ended by Agent");
+            }
+
+            resultsArea.style.display = 'flex';
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        }
+    </script>
+
+</body>
+
+</html>
