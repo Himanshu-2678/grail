@@ -15,16 +15,6 @@ Standard retrieval systems rely on keyword search or probabilistic semantic embe
 ## System Architecture
 
 ![GRAIL Architecture](assets/grail_architecture.png)
-```mermaid
-flowchart TD
-    A[User Query / Chat History] --> B[Constraint Extraction]
-    B --> C[BM25 + Dense Retrieval]
-    C --> D[Reciprocal Rank Fusion]
-    D --> E[Taxonomy-Aware Constraint Filtering]
-    E --> F[Cross-Encoder Reranking]
-    F --> G[Entropy-Based Calibration]
-    G --> H[Grounded Recommendation Generation]
-```
 
 ## Key Design Decisions
 * **Retrieval and ranking are deterministic.**
