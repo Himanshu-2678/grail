@@ -27,11 +27,14 @@ class QueryExpansion(BaseModel):
 class SemanticQueryExpander:
     def __init__(self):
         # Assumes GEMINI_API_KEY is set in environment
+        from dotenv import load_dotenv
+        load_dotenv()
+        
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         self.client = genai.Client(api_key=api_key)
-        self.model = "gemini-1.5-flash"
+        self.model = "gemini-2.5-flash"
         
         # We define our taxonomy so the LLM knows what to map to
         self.taxonomy = {
@@ -99,16 +102,21 @@ class SemanticQueryExpander:
         """
         
         # We use structured output to strictly control the LLM's response
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=QueryExpansion,
-            ),
-        )
-        
-        result = response.parsed
+        try:
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=QueryExpansion,
+                ),
+            )
+            result = response.parsed
+        except Exception as e:
+            import logging
+            logging.warning(f"Gemini API failure during expansion: {e}. Falling back to deterministic extraction.")
+            result = None
+            
         if not result:
             return {
                 "expanded_query": query, 
