@@ -1,10 +1,9 @@
 from typing import List, Dict, Any
-from sentence_transformers import CrossEncoder
 
 class Reranker:
-    def __init__(self, model_name: str = "BAAI/bge-reranker-large"):
-        self.model_name = model_name
-        self.model = CrossEncoder(self.model_name)
+    def __init__(self, model_name: str = None):
+        # Disabled CrossEncoder to fit within Render's memory limits (512MB)
+        self.model = None
         
     def _analyze_coverage(self, results: List[Dict]) -> Dict[str, int]:
         coverage = {
@@ -31,24 +30,15 @@ class Reranker:
         soft_negatives = [s.lower() for s in (soft_negatives or [])]
         weights = weights or {"technical_domain": 2.0, "assessment_type": 1.0, "soft_skills": 1.0, "cognitive_traits": 1.0}
             
-        # Prepare pairs for cross-encoder
-        pairs = []
-        for item in candidates:
-            tax = item.get("taxonomy", {})
-            doc_text = (
-                f"{item.get('name', '')} "
-                f"{', '.join(tax.get('technical_domain', []))} "
-                f"{item.get('description', '')}"
-            )
-            pairs.append([query, doc_text])
-            
-        # Calculate base semantic scores
-        scores = self.model.predict(pairs)
+        # Base semantic scores are bypassed to save memory. 
+        # We rely on the hybrid retrieval's RRF score as our foundation.
+        pass
         
         # Apply Query-Adaptive Dynamic Weighting
         valid_candidates = []
         for i, item in enumerate(candidates):
-            score = float(scores[i])
+            # Base score is derived from the retrieval RRF score
+            score = item.get('rrf_score', 0.0) * 10.0 
             tax = item.get("taxonomy", {})
             
             # We set a minimum floor so scores don't collapse into infinity
