@@ -16,6 +16,12 @@ Standard retrieval systems rely on keyword search or probabilistic semantic embe
 
 ![GRAIL Architecture](assets/grail_architecture.png)
 
+## Demo 
+
+[Video Demo on YouTube](https://youtu.be/9cPutC3g6ok)
+
+![GRAIL Interface 1](assets/grail_ss1.png)
+![GRAIL Interface 2](assets/grail_ss2.png)
 ## Key Design Decisions
 * **Retrieval and ranking are deterministic.**
 * **LLMs are restricted to extraction and verbalization.**
