@@ -1,0 +1,14 @@
+[
+  {
+    "query": "java backend",
+    "wrong_retrieval_top1": "JavaScript (New)",
+    "reason_for_failure": "Semantic Leakage. BM25 and embedding models matched the token 'Java' within 'JavaScript', allowing soft skill overlaps to push JavaScript to rank 1 over Java.",
+    "fix_applied": "Taxonomy-Aware Reranking Phase 2. Updated Gemini prompt to extract explicit required_constraints. Implemented symbolic reranker penalties (score *= 0.65) if the required domain is missing from the candidate's parsed taxonomy."
+  },
+  {
+    "query": "software",
+    "wrong_retrieval_top1": "Software Engineering Test",
+    "reason_for_failure": "Did not trigger clarification loop. The system blindly retrieved the first lexical match for 'software' even though it's too ambiguous to confidently recommend an assessment.",
+    "fix_applied": "Calibration Policy. Trigger logic now forces clarify if Top-1 margin < 0.5 AND query words < 3 AND constraint_coverage <= 1."
+  }
+]
